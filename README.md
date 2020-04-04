@@ -16,3 +16,7 @@ pip install stopp
 ```
 import stopp
 ```
+
+## Sample Result
+
+![](images/sample.png)
