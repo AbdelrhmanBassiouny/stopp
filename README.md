@@ -13,7 +13,7 @@ pip install stopp
 ```
 
 ## Usage
-```
+```Python
 import stopp
 ```
 
