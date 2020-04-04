@@ -12,5 +12,6 @@ numpy
 pip install stopp
 
 ## Usage
-
+```
 import stopp
+```
