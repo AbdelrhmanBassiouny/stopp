@@ -10,7 +10,7 @@ numpy
 
 ## Installation
 ```
-pip install stopp
+$ pip install stopp
 ```
 
 ## Sample Usage
