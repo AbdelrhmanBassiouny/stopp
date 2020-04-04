@@ -4,7 +4,7 @@ Safe Time Optimal Path Parameterization (STOPP) for serial robots, this produces
 a jerk limited, joint synchronized trajectories for smooth and safe robot motion for a given predefined path.
 
 ## Dependencies
-
+python3.5
 numpy
 
 ## Installation
