@@ -5,6 +5,7 @@ a jerk limited, joint synchronized trajectories for smooth and safe robot motion
 
 ## Dependencies
 python3.5
+
 numpy
 
 ## Installation
