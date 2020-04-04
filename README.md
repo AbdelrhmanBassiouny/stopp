@@ -8,8 +8,9 @@ a jerk limited trajectory for smooth and safe robot motion.
 numpy
 
 ## Installation
-
+```
 pip install stopp
+```
 
 ## Usage
 ```
