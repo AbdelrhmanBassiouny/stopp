@@ -19,7 +19,7 @@ import stopp
 
 robot_path = numpy_array 
 my_robot = stopp.Robot(n_joints, max_jerk, max_acc, max_vel)
-trajectory = my_robot(robot_path, interp_time_step=0.004)
+trajectory = my_robot.TimeParameterizePath(robot_path, interp_time_step=0.004)
 first_joint_time = trajectory[0].t
 firs_joint_pos = trajectory[0].pos
 first_joint_vel = trajectory[0].vel
