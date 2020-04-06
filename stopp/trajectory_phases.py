@@ -57,7 +57,8 @@ class Quintic:
                     1st row = times, 2nd row = positions, 3rd row = velocities, 4th row = accelerations
         """
         # Calculate Quintic Coefficients from quintic start and end points.
-        self.CalculateQuinticCoefficients()
+        if len(self.pos_coefficients) < 1:
+            self.CalculateQuinticCoefficients()
         coefficients = self.pos_coefficients.copy()
 
         # Solving for points times from points positions
@@ -101,8 +102,6 @@ class RampPhase(Quintic):
 
 
 class CruisePhase(Quintic):
-    def __init__(self, robot_kinematics):
-        super().__init__(robot_kinematics)
 
     def Calculate(self, cruise_end_vel):
         self.end.acc = self.start.acc
@@ -111,10 +110,14 @@ class CruisePhase(Quintic):
         # self.end.pos = 0.5 * self.start.acc * (self.end.t**2) + self.start.vel * self.end.t + self.start.pos
         self.end.pos = (self.end.vel**2 - self.start.vel**2)/(2*self.start.acc) + self.start.pos
 
+    def CalculateFromPeriod(self, cruising_period):
+        self.end.acc = self.start.acc
+        self.end.t = cruising_period
+        self.end.vel = self.start.acc * self.end.t + self.start.vel
+        self.end.pos = (self.end.vel**2 - self.start.vel**2)/(2*self.start.acc) + self.start.pos
+
 
 class DwellPhase(Quintic):
-    def __init__(self, robot_kinematics):
-        super().__init__(robot_kinematics)
 
     def Calculate(self, end_position):
         self.end.vel = self.start.vel
