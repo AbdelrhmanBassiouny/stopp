@@ -14,7 +14,7 @@ class JointState:
 class TrajectoryPoint(JointState):
     """ for defining trajectory point(s) that has position, velocity, acceleration and time"""
     def __init__(self, position, velocity, acceleration, time):
-        super().__init__(position, velocity, acceleration)
+        JointState.__init__(self, position, velocity, acceleration)
         self.t = time
 
     @classmethod

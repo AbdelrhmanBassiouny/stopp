@@ -1,5 +1,5 @@
 from .data_structs import TrajectoryPoint as Tp
-from .trajectory_utils import SolveForRealRoots, Interpolate
+from .trajectory_utils import SolveForRealRoots, Interpolate, IsClose
 from math import pi
 import numpy as np
 
@@ -14,7 +14,7 @@ class Quintic:
         self.start = Tp(0, 0, 0, 0)
         self.end = Tp(0, 0, 0, 0)
         self.j_max = robot_kinematics.j_max
-        self.J = self.j_max * 2 / pi
+        self.J = self.j_max * 2 / np.pi  # self.J = 2 * self.j_max / 3 is possible for no sine template
         self.a_max = robot_kinematics.a_max
         self.v_max = robot_kinematics.v_max
         self.pos_coefficients = []
@@ -59,23 +59,28 @@ class Quintic:
         # Calculate Quintic Coefficients from quintic start and end points.
         if len(self.pos_coefficients) < 1:
             self.CalculateQuinticCoefficients()
-        coefficients = self.pos_coefficients.copy()
+        coefficients = list(self.pos_coefficients)
+
+        path_times = []
+        # Add the (phase starting time + time_step) if time_step is specified (i.e. if interpolation is needed)
+        if (time_step is not None) and (time_step < self.end.t):
+            if not (len(positions) >= 1 and IsClose(positions[0], self.start.pos)):
+                path_times.append(time_step)
 
         # Solving for points times from points positions
-        path_and_control_point_times = []
         for i in range(len(positions)):
             coefficients[-1] -= positions[i]
-            path_and_control_point_times.append(SolveForRealRoots(coefficients))
+            path_times.append(SolveForRealRoots(coefficients))
             coefficients[-1] += positions[i]
-        if len(path_and_control_point_times) < 1:
-            path_and_control_point_times.append(0.0)
-        path_and_control_point_times.append(self.end.t)
+
+        if not (len(path_times) >= 1 and IsClose(path_times[-1], self.end.t)):
+            path_times.append(self.end.t)
 
         # Interpolating
         if time_step is not None:
-            time_array = Interpolate(path_and_control_point_times, time_step)
+            time_array = Interpolate(path_times, time_step)
         else:
-            time_array = np.array(path_and_control_point_times)
+            time_array = np.array(path_times)
 
         data = np.empty((4, time_array.shape[0]))
         data[0, :] = time_array
@@ -88,15 +93,17 @@ class Quintic:
 
 class RampPhase(Quintic):
     def __init__(self, robot_kinematics, ramp_down=False):
-        super().__init__(robot_kinematics)
+        Quintic.__init__(self, robot_kinematics)
         if ramp_down:
             self.J = -1 * self.J
+            self.j_max = -1 * self.j_max
 
     def Calculate(self, end_acceleration=0.0):
         self.end.acc = end_acceleration
         self.end.t = max((self.end.acc - self.start.acc) / self.J, 0.0)
         self.end.vel = 0.5 * (self.start.acc + self.end.acc) * self.end.t + self.start.vel
-        self.end.pos = (0.25 - 1 / (pi ** 2)) * self.J * (self.end.t**3) \
+        k = (0.25 - 1 / (pi ** 2))  # k = 3/20 is possible for no sine template.
+        self.end.pos = k * self.J * (self.end.t**3) \
             + 0.5 * self.start.acc * (self.end.t**2) \
             + self.start.vel * self.end.t + self.start.pos
 
@@ -107,14 +114,13 @@ class CruisePhase(Quintic):
         self.end.acc = self.start.acc
         self.end.vel = cruise_end_vel
         self.end.t = (self.end.vel - self.start.vel) / self.start.acc
-        # self.end.pos = 0.5 * self.start.acc * (self.end.t**2) + self.start.vel * self.end.t + self.start.pos
-        self.end.pos = (self.end.vel**2 - self.start.vel**2)/(2*self.start.acc) + self.start.pos
+        self.end.pos = 0.5 * self.start.acc * (self.end.t**2) + self.start.vel * self.end.t + self.start.pos
 
     def CalculateFromPeriod(self, cruising_period):
         self.end.acc = self.start.acc
         self.end.t = cruising_period
         self.end.vel = self.start.acc * self.end.t + self.start.vel
-        self.end.pos = (self.end.vel**2 - self.start.vel**2)/(2*self.start.acc) + self.start.pos
+        self.end.pos = 0.5 * self.start.acc * (self.end.t**2) + self.start.vel * self.end.t + self.start.pos
 
 
 class DwellPhase(Quintic):

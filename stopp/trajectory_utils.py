@@ -1,5 +1,5 @@
 from .data_structs import TrajectoryPoint as Tp
-from math import ceil, isclose as close
+from math import ceil, fabs
 import numpy as np
 
 
@@ -12,7 +12,7 @@ def Assert(condition, message):
 
 
 def IsClose(a, b):
-    return close(a, b, abs_tol=0.0001)
+    return fabs(a - b) <= 0.0001
 
 
 def IsGreater(a, b):
@@ -39,6 +39,10 @@ def Interpolate(array_to_interpolate, step):
     for i in range(1, len(array_to_interpolate)):
         size = ceil((array_to_interpolate[i]-array_to_interpolate[i-1]) / step) + 1
         time_list.append(np.linspace(array_to_interpolate[i-1], array_to_interpolate[i], size))
+        if i > 1:
+            # Remove the duplicate point at the start,
+            # since it was included at the end of the previous array.
+            time_list[-1] = time_list[-1][1:]
         total_size += size
     return np.concatenate(time_list, axis=0)
 

@@ -13,7 +13,7 @@ class Profile:
         """
         # Initialize robot kinematic limits to be used in profile calculations.
         self.j_max = robot_kinematics.j_max
-        self.J = self.j_max * 2 / np.pi
+        self.J = self.j_max * 2 / np.pi  # self.J = 2 * self.j_max / 3 is possible for no sine template
         self.a_max = robot_kinematics.a_max
         self.v_max = robot_kinematics.v_max
 
@@ -72,7 +72,7 @@ class SustainedPulse(Profile):
         Acceleration RampUp -> Acceleration Cruise -> Acceleration RampDown -> Acceleration Dwell
     """
     def __init__(self, initial_profile_point, final_profile_point, robot_kinematics):
-        super().__init__(initial_profile_point, final_profile_point, robot_kinematics)
+        Profile.__init__(self, initial_profile_point, final_profile_point, robot_kinematics)
         # Initialize Cruise Phase.
         self._cruise = CruisePhase(robot_kinematics)
 
@@ -98,10 +98,11 @@ class SustainedPulse(Profile):
         self._ramp_up.Calculate(self.a_max)
 
         # Reduce cruise period to reach end_position at end of ramp_down instead of reaching v_max.
+        k = (0.25 - 1 / (pi ** 2))  # k = 3/20 is another possible value (no sine template).
         a = 0.5 * self._cruise.start.acc
         b = self._cruise.start.vel + self._cruise.start.acc * self._cruise.start.t
         c = self._cruise.start.pos - self.end.pos + self._cruise.start.vel * self._cruise.start.t\
-            - (0.25 - 1 / (pi ** 2)) * self.J * (self._cruise.start.t**3) \
+            - k * self.J * (self._cruise.start.t**3) \
             + 0.5 * self._cruise.start.acc * (self._cruise.start.t**2)
         cruising_period = max(SolveForRealRoots([a, b, c], assert_condition=False), 0.0)
 
@@ -121,7 +122,7 @@ class Pulse(Profile):
         as in sustained acceleration pulse where adjustments are only on cruising period.
     """
     def __init__(self, initial_profile_point, final_profile_point, robot_kinematics):
-        super().__init__(initial_profile_point, final_profile_point, robot_kinematics)
+        Profile.__init__(self, initial_profile_point, final_profile_point, robot_kinematics)
 
         # Phase Linking
         self._ramp_down.start = self._ramp_up.end
