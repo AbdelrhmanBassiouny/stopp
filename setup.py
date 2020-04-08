@@ -8,7 +8,7 @@ setup(
   author = 'Abdelrhman Bassiouny',                   
   author_email = 'Bassio@programmer.com',      
   url = 'https://github.com/AbdelrhmanBassiouny/stopp',   
-  download_url = 'https://github.com/AbdelrhmanBassiouny/stopp/archive/v_02.zip',    
+  download_url = 'https://github.com/AbdelrhmanBassiouny/stopp/archive/v_02.tar.gz',    
   keywords = ['robot trajectory', 'safe', 'jerk limited', 'moveit path support'],   
   install_requires=[            
           'numpy>=1.12.0',
