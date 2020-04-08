@@ -6,7 +6,7 @@ stopp/*.pyc
 
 /.idea
 
-dist/
+/dist
 
 /setup.py
 
