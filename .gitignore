@@ -2,12 +2,12 @@ __pycache__/
 
 tests/
 
-dist
+dist/
 
 setup.py
 
-stopp/*.pyc
+*.pyc
 
-/.idea
+.idea
 
 
