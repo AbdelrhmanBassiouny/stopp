@@ -1,6 +1,8 @@
-from .data_structs import TrajectoryPoint as Tp
 from math import ceil, fabs
+
 import numpy as np
+
+from .data_structs import TrajectoryPoint as Tp
 
 
 def Assert(condition, message):
@@ -34,8 +36,9 @@ def SolveForRealRoots(coefficients, assert_condition=True):
 
 
 def Interpolate(array_to_interpolate, step):
+    if step <= 0:
+        raise ValueError("Interpolation step should be greater than zero")
     time_list = []
-    total_size = 0
     for i in range(1, len(array_to_interpolate)):
         size = ceil((array_to_interpolate[i]-array_to_interpolate[i-1]) / step) + 1
         time_list.append(np.linspace(array_to_interpolate[i-1], array_to_interpolate[i], size))
@@ -43,8 +46,25 @@ def Interpolate(array_to_interpolate, step):
             # Remove the duplicate point at the start,
             # since it was included at the end of the previous array.
             time_list[-1] = time_list[-1][1:]
-        total_size += size
     return np.concatenate(time_list, axis=0)
+
+
+def ValidateRobotPath(robot_path, n_joints):
+    if not hasattr(robot_path, '__getitem__'):
+        raise TypeError("Robot Path should be a 2 dimensional sequence [List or Tuple or ndarray]")
+    if not hasattr(robot_path[0], '__getitem__') and n_joints > 1:
+        raise TypeError("Robot Path should be a 2 dimensional array or a nested sequence"
+                        " with shape=(joints_number, points_number)")
+    if len(robot_path) != n_joints and n_joints > 1:
+        raise ValueError("Robot Path should have its first dimension equal to number of joints")
+
+    n_points = len(robot_path[0]) if n_joints > 1 else len(robot_path)
+    if n_points < 2:
+        raise ValueError("Need at least 2 path points to construct a trajectory")
+    if n_joints > 1:
+        for j in range(n_joints):
+            if len(robot_path[j]) != n_points:
+                raise ValueError("All joints should have the same number of points")
 
 
 def FindMaxJoint(rob_path):
@@ -58,6 +78,8 @@ def EnsurePathHasOddSize(rob_path):
         n = (rob_path[0].size // 2) - 1
         mid_point = (rob_path[:, n] + rob_path[:, n + 1]) / 2.0
         return np.column_stack([rob_path[:, 0:(n + 1)], mid_point, rob_path[:, (n + 1):]])
+    else:
+        return rob_path
 
 
 def SynchronizeJointsToTrajectory(joints_path, trajectory):
@@ -68,39 +90,3 @@ def SynchronizeJointsToTrajectory(joints_path, trajectory):
         joint_trajectory = Tp(new_joint_path, trajectory.vel * ratio[j], trajectory.acc * ratio[j], trajectory.t)
         rob_trajectory.append(joint_trajectory)
     return rob_trajectory
-
-
-def AdjustProfileToRequirements(profile):
-    # Calculate the profile phases' end points at robot kinematic limits (max parameters).
-    profile.CalculateAtMaxParameters()
-
-    # Check if the required distance has been surpassed when moving at max parameters.
-    if IsGreater(profile.reached_point.pos, profile.end.pos):
-        # Adjust the profile shape to reach end position instead:
-        #   In SustainedPulse, this is done by reducing acceleration cruise length.
-        #   In Pulse, this is done by reducing pulse peak (i.e. peak acceleration).
-        profile.ReduceToReachEndPosition()
-
-
-def GetFullTrajectory(first_half, flip):
-    second_half = Tp(0, 0, 0, 0)
-    pos_lift_up = 2 * first_half.pos[-1]
-    second_half.t = np.cumsum(np.flip(np.diff(first_half.t))) + first_half.t[-1]
-    second_half.pos = -np.flip(first_half.pos[:-1]) + pos_lift_up
-    second_half.vel = np.flip(first_half.vel[:-1])
-    second_half.acc = -np.flip(first_half.acc[:-1])
-
-    # Concatenate the first and second trajectory halves to get the full trajectory.
-    trajectory = Tp(0, 0, 0, 0)
-    trajectory.t = np.concatenate([first_half.t, second_half.t], axis=0)
-    trajectory.pos = np.concatenate([first_half.pos, second_half.pos], axis=0)
-    trajectory.vel = np.concatenate([first_half.vel, second_half.vel], axis=0)
-    trajectory.acc = np.concatenate([first_half.acc, second_half.acc], axis=0)
-
-    # re-flip the data if the path was originally decreasing thus was originally flipped.
-    if flip:
-        trajectory.pos = -trajectory.pos + pos_lift_up
-        trajectory.vel = -trajectory.vel
-        trajectory.acc = -trajectory.acc
-
-    return trajectory

@@ -1,7 +1,8 @@
+import numpy as np
+
 from .data_structs import TrajectoryPoint as Tp
 from .trajectory_profiles import SustainedPulse, Pulse
 from .trajectory_utils import IsGreater
-import numpy as np
 
 
 def AdjustProfileToRequirements(profile):
@@ -45,7 +46,7 @@ def ConstructJointProfile(robot_kinematics, joint_path, time_step=None):
         :param robot_kinematics: a RobotKinematics object for which the trajectory profile is constructed
         :param joint_path: (numpy array) path points container
         :param time_step: (optional)(float) interpolation time step
-        :param (numpy nd-array)(4, number_of_points) The complete joint trajectory.
+        :return The joint trajectory.
     """
     rob_k = robot_kinematics
     path = np.copy(joint_path)

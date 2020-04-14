@@ -1,9 +1,11 @@
-from .data_structs import TrajectoryPoint as Tp
-from .trajectory_utils import IsGreater, SolveForRealRoots
-from .trajectory_phases import RampPhase, CruisePhase, DwellPhase
-from math import pi
 from bisect import bisect_right
+from math import pi
+
 import numpy as np
+
+from .data_structs import TrajectoryPoint as Tp
+from .trajectory_phases import RampPhase, CruisePhase, DwellPhase
+from .trajectory_utils import IsGreater, SolveForRealRoots
 
 
 class Profile:
@@ -42,15 +44,26 @@ class Profile:
     def SampleByPosition(self, positions, time_step=None):
         prev_idx = 0
         data_list = []
+        accumulated_time = 0.0
         for i in range(len(self._phase_list)):
             curr_idx = bisect_right(positions, self._phase_list[i].end.pos, lo=prev_idx)
+
             phase_positions = positions[prev_idx:curr_idx]
-            data_list.append(self._phase_list[i].SampleByPosition(phase_positions, time_step=time_step))
+
+            if len(phase_positions) > 0 or time_step is not None:
+                data_list.append(self._phase_list[i].SampleByPosition(phase_positions, time_step=time_step))
+                data_list[-1][0] += accumulated_time
+
+            accumulated_time += self._phase_list[i].end.t
             prev_idx = curr_idx
 
-        for i in range(1, len(data_list)):
-            data_list[i][0] += data_list[i-1][0, -1]
-        data_array = np.column_stack(data_list)
+        if len(data_list) > 0:
+            data_array = np.column_stack(data_list)
+        else:
+            data_array = np.array([[self.start.t  , self.end.t  ],
+                                   [self.start.pos, self.end.pos],
+                                   [self.start.vel, self.end.vel],
+                                   [self.start.acc, self.end.acc]])
 
         return Tp(data_array[1], data_array[2], data_array[3], data_array[0])
 
