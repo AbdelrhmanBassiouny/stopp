@@ -5,7 +5,7 @@ import numpy as np
 
 from .data_structs import TrajectoryPoint as Tp
 from .trajectory_phases import RampPhase, CruisePhase, DwellPhase
-from .trajectory_utils import IsGreater, SolveForRealRoots
+from .trajectory_utils import IsGreater, SolveForPositiveRealRoots, NoSolutionError
 
 
 class Profile:
@@ -40,6 +40,10 @@ class Profile:
             if IsGreater(self._phase_list[phase].end.t, 0.0):
                 final_phase_list.append(self._phase_list[phase])
         self._phase_list = final_phase_list
+
+    def CalculateQuinticCoefficients(self):
+        for phase in self._phase_list:
+            phase.CalculateQuinticCoefficients()
 
     def SampleByPosition(self, positions, time_step=None):
         prev_idx = 0
@@ -117,7 +121,11 @@ class SustainedPulse(Profile):
         c = self._cruise.start.pos - self.end.pos + self._cruise.start.vel * self._cruise.start.t\
             - k * self.J * (self._cruise.start.t**3) \
             + 0.5 * self._cruise.start.acc * (self._cruise.start.t**2)
-        cruising_period = max(SolveForRealRoots([a, b, c], assert_condition=False), 0.0)
+        try:
+            cruising_period = SolveForPositiveRealRoots([a, b, c])
+        except NoSolutionError:
+            # Means there's no positive real roots found, thus no cruising period required.
+            cruising_period = 0.0
 
         self._cruise.CalculateFromPeriod(cruising_period)
         self._ramp_down.Calculate()
@@ -157,7 +165,7 @@ class Pulse(Profile):
     def ReduceToReachEndPosition(self):
         # Adjust Acceleration peak to reach end_position at end of ramp down.
         coefficients = [self.J, 2*self.start.acc, 2*self.start.vel, self.start.pos-self.end.pos]
-        acc_peak = SolveForRealRoots(coefficients) * self.J + self._start.acc
+        acc_peak = SolveForPositiveRealRoots(coefficients) * self.J + self._start.acc
 
         self._ramp_up.Calculate(acc_peak)
         self._ramp_down.Calculate()

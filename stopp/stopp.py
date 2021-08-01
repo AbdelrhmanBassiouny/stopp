@@ -42,7 +42,7 @@ class Robot:
         ValidateRobotPath(robot_path, self.rob_k.j_num)
 
         # Copy path to a numpy nd-array object.
-        rob_path = np.copy(robot_path).reshape(self.rob_k.j_num, -1)
+        rob_path = np.copy(robot_path)
 
         # If path points are even, Add a point in the middle to make it Odd.
         rob_path = EnsurePathHasOddSize(rob_path)

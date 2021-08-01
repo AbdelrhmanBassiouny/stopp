@@ -5,12 +5,16 @@ import numpy as np
 from .data_structs import TrajectoryPoint as Tp
 
 
-def Assert(condition, message):
-    try:
-        assert condition
-    except AssertionError:
-        print(message)
-        raise
+class ShapeError(Exception):
+    pass
+
+
+class LogicError(Exception):
+    pass
+
+
+class NoSolutionError(Exception):
+    pass
 
 
 def IsClose(a, b):
@@ -25,12 +29,12 @@ def IsSmaller(a, b):
     return a+0.0001 <= b
 
 
-def SolveForRealRoots(coefficients, assert_condition=True):
+def SolveForPositiveRealRoots(coefficients):
     roots = np.roots(coefficients)
     x_roots = roots[np.isclose(roots.imag, 0.0, 0.001, 0.0001)].real
     indices = np.array(np.where(x_roots >= 0))
-    if assert_condition:
-        Assert(indices.size > 0, "No real positive solution found")
+    if indices.size < 1:
+        raise NoSolutionError("No real positive solution found")
     x = np.min(x_roots[indices]) if indices.size > 0 else -1
     return x
 
@@ -50,36 +54,30 @@ def Interpolate(array_to_interpolate, step):
 
 
 def ValidateRobotPath(robot_path, n_joints):
-    if not hasattr(robot_path, '__getitem__'):
-        raise TypeError("Robot Path should be a 2 dimensional sequence [List or Tuple or ndarray]")
-    if not hasattr(robot_path[0], '__getitem__') and n_joints > 1:
-        raise TypeError("Robot Path should be a 2 dimensional array or a nested sequence"
-                        " with shape=(joints_number, points_number)")
-    if len(robot_path) != n_joints and n_joints > 1:
-        raise ValueError("Robot Path should have its first dimension equal to number of joints")
-
-    n_points = len(robot_path[0]) if n_joints > 1 else len(robot_path)
-    if n_points < 2:
-        raise ValueError("Need at least 2 path points to construct a trajectory")
-    if n_joints > 1:
-        for j in range(n_joints):
-            if len(robot_path[j]) != n_points:
-                raise ValueError("All joints should have the same number of points")
-
-
-def FindMaxJoint(rob_path):
-    joint_distances = [np.fabs(rob_path[j, -1] - rob_path[j, 0]) for j in range(len(rob_path))]
-    max_dists = np.argmax(joint_distances)
-    return max_dists[0] if max_dists.size > 1 else max_dists
+    if not isinstance(robot_path, np.ndarray):
+        raise TypeError("Expected robot_path to have {}, but got {} instead".format(np.ndarray, type(robot_path)))
+    if not len(robot_path.shape) == 2:
+        raise ShapeError("Expected robot_path to have 2 dimensions, but got {} instead"
+                         .format(len(robot_path.shape)))
+    if not robot_path.shape[0] == n_joints:
+        raise ShapeError("Expected robot_path to have its first_dimension_size({}) equal to number_of_joints({})"
+                         .format(robot_path.shape[0], n_joints))
+    if not robot_path.shape[1] >= 2:
+        raise LogicError("Expected robot_path to have at least 2 points, got {} instead".format(robot_path.shape[1]))
 
 
 def EnsurePathHasOddSize(rob_path):
     if (rob_path[0].size % 2) == 0:
         n = (rob_path[0].size // 2) - 1
         mid_point = (rob_path[:, n] + rob_path[:, n + 1]) / 2.0
-        return np.column_stack([rob_path[:, 0:(n + 1)], mid_point, rob_path[:, (n + 1):]])
-    else:
-        return rob_path
+        rob_path = np.column_stack([rob_path[:, 0:(n + 1)], mid_point, rob_path[:, (n + 1):]])
+    return rob_path
+
+
+def FindMaxJoint(rob_path):
+    joint_distances = [np.fabs(rob_path[j, -1] - rob_path[j, 0]) for j in range(len(rob_path))]
+    max_dists = np.argmax(joint_distances)
+    return max_dists[0] if max_dists.size > 1 else max_dists
 
 
 def SynchronizeJointsToTrajectory(joints_path, trajectory):

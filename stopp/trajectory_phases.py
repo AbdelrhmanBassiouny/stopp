@@ -3,7 +3,7 @@ from math import pi
 import numpy as np
 
 from .data_structs import TrajectoryPoint as Tp
-from .trajectory_utils import SolveForRealRoots, Interpolate, IsClose
+from .trajectory_utils import SolveForPositiveRealRoots, Interpolate, IsClose
 
 
 class Quintic:
@@ -55,9 +55,7 @@ class Quintic:
             :return:(numpy nd-array) shape=(4, number of positions)
                     1st row = times, 2nd row = positions, 3rd row = velocities, 4th row = accelerations
         """
-        # Calculate Quintic Coefficients from quintic start and end points.
-        if self.coefficients_matrix.size < 1:
-            self.CalculateQuinticCoefficients()
+
         pos_coefficients = np.copy(self.coefficients_matrix[0])
 
         path_times = []
@@ -68,7 +66,7 @@ class Quintic:
         # Solving for points times from points positions
         for i in range(len(positions)):
             pos_coefficients[-1] -= positions[i]
-            path_times.append(SolveForRealRoots(pos_coefficients))
+            path_times.append(SolveForPositiveRealRoots(pos_coefficients))
             pos_coefficients[-1] += positions[i]
 
         if time_step is not None:

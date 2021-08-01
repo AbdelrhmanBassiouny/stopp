@@ -73,6 +73,9 @@ def ConstructJointProfile(robot_kinematics, joint_path, time_step=None):
         # Adjust the pulse profile to the requirements.
         AdjustProfileToRequirements(profile)
 
+    # Calculate Phases Quintic Coefficients from the calculated phase start and end points.
+    profile.CalculateQuinticCoefficients()
+
     # Sample from the constructed profile by the path positions, and an interpolation time step if given.
     first_half = profile.SampleByPosition(path[:mid_idx + 1], time_step)
 
