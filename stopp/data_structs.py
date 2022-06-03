@@ -38,12 +38,12 @@ class TrajectoryPoint(JointState):
 
 
 class RobotKinematics:
-    def __init__(self, number_of_joints, max_jerk, max_acceleration, max_velocity):
+    def __init__(self, number_of_joints, max_jerk, max_acceleration, max_velocity, max_decceleration=None):
         self.j_num = number_of_joints
         self.j_max = max_jerk
         self.a_max = max_acceleration
         self.v_max = max_velocity
-
+        self.d_max = max_decceleration if max_decceleration is not None else self.a_max
     @classmethod
     def FromRobotKinematics(cls, robot_kinematics):
         cls.j_num = robot_kinematics.j_num

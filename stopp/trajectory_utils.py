@@ -28,6 +28,20 @@ def IsGreater(a, b):
 def IsSmaller(a, b):
     return a+0.0001 <= b
 
+def ConcatTraj(traj_list):
+    trajectory = traj_list[0]
+    for i in range(1, len(traj_list)):
+        second_half = traj_list[i]
+        trajectory.t = np.concatenate(
+            [trajectory.t, second_half.t+trajectory.t[-1]], axis=0)
+        trajectory.pos = np.concatenate(
+            [trajectory.pos, second_half.pos], axis=0)
+        trajectory.vel = np.concatenate(
+            [trajectory.vel, second_half.vel], axis=0)
+        trajectory.acc = np.concatenate(
+            [trajectory.acc, second_half.acc], axis=0)
+    return trajectory
+
 
 def SolveForPositiveRealRoots(coefficients):
     roots = np.roots(coefficients)

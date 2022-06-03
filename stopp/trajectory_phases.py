@@ -57,7 +57,14 @@ class Quintic:
         """
 
         pos_coefficients = np.copy(self.coefficients_matrix[0])
-
+        print(positions)
+        print(self.__class__)
+        print("start_vel = ", self.start.vel)
+        print("end_vel = ", self.end.vel)
+        print("start_pos = ", self.start.pos)
+        print("end_pos = ", self.end.pos)
+        print("start_t = ", self.start.t)
+        print("end_t = ", self.end.t)
         path_times = []
         # Add the phase starting time if time_step is specified (i.e. if interpolation is needed)
         if (time_step is not None) and not (isinstance(self, RampPhase) and self.J > 0):
@@ -74,9 +81,12 @@ class Quintic:
             if len(path_times) < 1 or (len(path_times) >= 1 and not IsClose(path_times[-1], self.end.t)):
                 path_times.append(self.end.t)
 
-            # Interpolating
-            time_array = Interpolate(path_times, time_step)
-            if not (isinstance(self, RampPhase) and self.J > 0):
+            if len(path_times) == 1:
+                time_array = np.array(path_times)
+            else:
+                # Interpolating
+                time_array = Interpolate(path_times, time_step)
+            if not (isinstance(self, RampPhase) and self.J > 0) and (time_array.shape[0] > 1):
                 time_array = time_array[1:]
         else:
             time_array = np.array(path_times)
@@ -127,5 +137,9 @@ class DwellPhase(Quintic):
     def Calculate(self, end_position):
         self.end.vel = self.start.vel
         self.end.acc = self.start.acc
-        self.end.t = max((end_position - self.start.pos) / self.start.vel, 0)
-        self.end.pos = self.end.t * self.start.vel + self.start.pos
+        if IsClose(self.start.vel, 0.0):
+            self.end.t  = self.start.t
+            self.end.pos = self.start.pos
+        else:
+            self.end.t = max((end_position - self.start.pos) / self.start.vel, 0)
+            self.end.pos = self.end.t * self.start.vel + self.start.pos
