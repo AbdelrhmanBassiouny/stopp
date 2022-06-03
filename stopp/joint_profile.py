@@ -10,8 +10,8 @@ def AdjustProfileToRequirements(profile):
     profile.CalculateAtMaxParameters()
 
     # Check if the required distance has been surpassed when moving at max parameters.
-    print(profile.reached_point.vel)
-    print(IsGreater(profile.reached_point.pos, profile.end.pos))
+    # print(profile.reached_point.vel)
+    # print(IsGreater(profile.reached_point.pos, profile.end.pos))
     if IsGreater(profile.reached_point.pos, profile.end.pos):
         # Adjust the profile shape to reach end position instead:
         #   In SustainedPulse, this is done by reducing acceleration cruise length.
@@ -23,7 +23,7 @@ def GetFullTrajectory(first_half, flip, velocity_mode=False, accelerate=True):
     second_half = Tp(0, 0, 0, 0)
     pos_lift_up = 2 * first_half.pos[-1]
     trajectory = Tp.FromTrajectoryPoint(first_half)
-    print(trajectory.vel[-1])
+    # print(trajectory.vel[-1])
 
     # Calculate second half part of the trajectory
     second_half.t = np.cumsum(
@@ -49,7 +49,7 @@ def GetFullTrajectory(first_half, flip, velocity_mode=False, accelerate=True):
 
     # re-flip the data if the path was originally decreasing thus was originally flipped.
     if flip:
-        print("Flipped")
+        # print("Flipped")
         trajectory.pos = -trajectory.pos + pos_lift_up
         trajectory.vel = -trajectory.vel
         trajectory.acc = -trajectory.acc
@@ -84,9 +84,9 @@ def ConstructJointProfile(robot_kinematics, joint_path, vi=0, vf=0, time_step=No
     AdjustProfileToRequirements(profile)
 
     # Make sure these requirements are met after the adjustments.
-    print(profile.reached_point.vel)
-    print(rob_k.v_max)
-    print(IsGreater(profile.reached_point.vel, rob_k.v_max))
+    # print(profile.reached_point.vel)
+    # print(rob_k.v_max)
+    # print(IsGreater(profile.reached_point.vel, rob_k.v_max))
     if IsGreater(profile.reached_point.vel, rob_k.v_max) \
             or IsGreater(profile.reached_point.pos, profile.end.pos):
         # Change profile shape from SustainedPulse to Pulse if it cannot accommodate for the requirements.

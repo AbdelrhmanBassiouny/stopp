@@ -50,9 +50,9 @@ class Profile:
         data_list = []
         accumulated_time = 0.0
         for i in range(len(self._phase_list)):
-            print(positions[prev_idx])
-            print(positions[prev_idx:])
-            print(self._phase_list[i].end.pos)
+            # print(positions[prev_idx])
+            # print(positions[prev_idx:])
+            # print(self._phase_list[i].end.pos)
             curr_idx = bisect_right(positions, self._phase_list[i].end.pos, lo=prev_idx)
 
             phase_positions = positions[prev_idx:curr_idx]

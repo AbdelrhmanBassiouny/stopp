@@ -92,7 +92,7 @@ class Robot:
 
         # Find Max Joint, which is the joint that moves the greatest distance.
         max_j_num = FindMaxJoint(rob_path)
-        print(max_j_num)
+        # print(max_j_num)
 
         # Construct Max Joint Profile.
         max_trajectory = ConstructJointProfile(self.rob_k, rob_path[max_j_num],
